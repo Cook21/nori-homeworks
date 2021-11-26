@@ -1,4 +1,6 @@
 cmake_minimum_required (VERSION 3.2)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 project(nori)
 
 add_subdirectory(ext ext_build)
@@ -87,6 +89,7 @@ add_executable(nori
   src/warp.cpp
   src/microfacet.cpp
   src/mirror.cpp
+  src/normals.cpp
   src/dielectric.cpp
 )
 

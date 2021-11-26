@@ -1,0 +1,6 @@
+Ubuntu:
+zlib1g-dev xorg-dev libglu1-mesa-dev
+Frdora:
+zlib-devel mesa-libGLU-devel libXi-devel libXcursor-devel libXinerama-devel libXrandr-devel xorg-x11-server-devel
+
+add set(CMAKE_CXX_STANDARD 17) to the 2nd line of CMakeLists.txt
