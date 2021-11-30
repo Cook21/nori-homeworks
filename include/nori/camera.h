@@ -53,24 +53,25 @@ public:
      *    This accounts for the difference in the camera response
      *    function and the sampling density.
      */
-    virtual Color3f sampleRay(Ray3f &ray,
-        const Point2f &samplePosition,
-        const Point2f &apertureSample) const = 0;
-
+    virtual Color3f sampleRay(Ray3f& ray,
+        const Point2f& samplePosition,
+        const Point2f& apertureSample) const = 0;
+    virtual Point3f getPosition() = 0;
     /// Return the size of the output image in pixels
-    const Vector2i &getOutputSize() const { return m_outputSize; }
+    const Vector2i& getOutputSize() const { return m_outputSize; }
 
     /// Return the camera's reconstruction filter in image space
-    const ReconstructionFilter *getReconstructionFilter() const { return m_rfilter; }
+    const ReconstructionFilter* getReconstructionFilter() const { return m_rfilter; }
 
     /**
      * \brief Return the type of object (i.e. Mesh/Camera/etc.) 
      * provided by this instance
      * */
     EClassType getClassType() const { return ECamera; }
+
 protected:
     Vector2i m_outputSize;
-    ReconstructionFilter *m_rfilter;
+    ReconstructionFilter* m_rfilter;
 };
 
 NORI_NAMESPACE_END

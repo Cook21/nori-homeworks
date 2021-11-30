@@ -107,6 +107,9 @@ public:
 
         return Color3f(1.0f);
     }
+    Point3f getPosition(){
+        return m_cameraToWorld * Point3f(0, 0, 0);
+    }
 
     void addChild(NoriObject *obj) {
         switch (obj->getClassType()) {

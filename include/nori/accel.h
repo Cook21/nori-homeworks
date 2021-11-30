@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "nori/common.h"
+#include <cstdint>
 #include <nori/mesh.h>
 
 NORI_NAMESPACE_BEGIN
@@ -36,13 +38,14 @@ public:
      *
      * This function can only be used before \ref build() is called
      */
-    void addMesh(Mesh *mesh);
+    void addMesh(Mesh* mesh);
 
     /// Build the acceleration data structure (currently a no-op)
     void build();
+    void sortTree(const Point3f& origin);
 
     /// Return an axis-aligned box that bounds the scene
-    const BoundingBox3f &getBoundingBox() const { return m_bbox; }
+    const BoundingBox3f& getBoundingBox() const { return m_bbox; }
 
     /**
      * \brief Intersect a ray against all triangles stored in the scene and
@@ -63,11 +66,37 @@ public:
      *
      * \return \c true if an intersection was found
      */
-    bool rayIntersect(const Ray3f &ray, Intersection &its, bool shadowRay) const;
+    bool rayIntersect(const Ray3f& ray, Intersection& its, bool shadowRay) const;
 
 private:
-    Mesh         *m_mesh = nullptr; ///< Mesh (only a single one for now)
-    BoundingBox3f m_bbox;           ///< Bounding box of the entire scene
+    class OctTreeNode {
+    public:
+        TBoundingBox<Point3f>* boundingBox {};
+        std::vector<uint32_t>* triangles;
+        std::array<OctTreeNode*, 8> child { nullptr };
+        //float sqrtDistanceToCamera=std::numeric_limits<float>::infinity();
+        OctTreeNode(TBoundingBox<Point3f>* boundingBox, std::vector<uint32_t>* triangles)
+        {
+            this->boundingBox = boundingBox;
+            this->triangles = triangles;
+        }
+        ~OctTreeNode()
+        {
+            for (auto i : child) {
+                delete i;
+            }
+            delete boundingBox;
+            delete triangles;
+        }
+        bool isLeaf() const
+        {
+            return !(triangles == nullptr);
+        }
+    };
+
+    Mesh* m_mesh = nullptr; ///< Mesh (only a single one for now)
+    BoundingBox3f m_bbox; ///< Bounding box of the entire scene
+    OctTreeNode* m_octTree = nullptr;
 };
 
 NORI_NAMESPACE_END

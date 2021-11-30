@@ -232,7 +232,7 @@ template <typename _PointType> struct TBoundingBox {
         return (max.array() == min.array()).all();
     }
 
-    /// Check whether this bounding box has any associated volume
+    /// Check whether this bounding box has any associated volume, if it has collapsed to a surface, then false
     bool hasVolume() const {
         return (max.array() > min.array()).all();
     }
@@ -267,6 +267,7 @@ template <typename _PointType> struct TBoundingBox {
 
     /// Clip to another bounding box
     void clip(const TBoundingBox &bbox) {
+        //cwiseMax will output a point that each component is the smaller one of the two points
         min = min.cwiseMax(bbox.min);
         max = max.cwiseMin(bbox.max);
     }
