@@ -30,33 +30,44 @@ public:
     typedef Eigen::Array3f Base;
 
     /// Initialize the color vector with a uniform value
-    Color3f(float value = 0.f) : Base(value, value, value) { }
+    Color3f(float value = 0.f)
+        : Base(value, value, value)
+    {
+    }
 
     /// Initialize the color vector with specific per-channel values
-    Color3f(float r, float g, float b) : Base(r, g, b) { }
+    Color3f(float r, float g, float b)
+        : Base(r, g, b)
+    {
+    }
 
     /// Construct a color vector from ArrayBase (needed to play nice with Eigen)
-    template <typename Derived> Color3f(const Eigen::ArrayBase<Derived>& p) 
-        : Base(p) { }
+    template <typename Derived>
+    Color3f(const Eigen::ArrayBase<Derived>& p)
+        : Base(p)
+    {
+    }
 
     /// Assign a color vector from ArrayBase (needed to play nice with Eigen)
-    template <typename Derived> Color3f &operator=(const Eigen::ArrayBase<Derived>& p) {
+    template <typename Derived>
+    Color3f& operator=(const Eigen::ArrayBase<Derived>& p)
+    {
         this->Base::operator=(p);
         return *this;
     }
 
     /// Return a reference to the red channel
-    float &r() { return x(); }
+    float& r() { return x(); }
     /// Return a reference to the red channel (const version)
-    const float &r() const { return x(); }
+    const float& r() const { return x(); }
     /// Return a reference to the green channel
-    float &g() { return y(); }
+    float& g() { return y(); }
     /// Return a reference to the green channel (const version)
-    const float &g() const { return y(); }
+    const float& g() const { return y(); }
     /// Return a reference to the blue channel
-    float &b() { return z(); }
+    float& b() { return z(); }
     /// Return a reference to the blue channel (const version)
-    const float &b() const { return z(); }
+    const float& b() const { return z(); }
 
     /// Clamp to the positive range
     Color3f clamp() const { return Color3f(std::max(r(), 0.0f),
@@ -75,7 +86,8 @@ public:
     float getLuminance() const;
 
     /// Return a human-readable string summary
-    std::string toString() const {
+    std::string toString() const
+    {
         return tfm::format("[%f, %f, %f]", coeff(0), coeff(1), coeff(2));
     }
 };
@@ -90,26 +102,41 @@ public:
     typedef Eigen::Array4f Base;
 
     /// Create an zero value
-    Color4f() : Base(0.0f, 0.0f, 0.0f, 0.0f) { }
+    Color4f()
+        : Base(0.0f, 0.0f, 0.0f, 0.0f)
+    {
+    }
 
     /// Create from a 3-channel color
-    Color4f(const Color3f &c) : Base(c.r(), c.g(), c.b(), 1.0f) { }
+    Color4f(const Color3f& c)
+        : Base(c.r(), c.g(), c.b(), 1.0f)
+    {
+    }
 
     /// Initialize the color vector with specific per-channel values
-    Color4f(float r, float g, float b, float w) : Base(r, g, b, w) { }
+    Color4f(float r, float g, float b, float w)
+        : Base(r, g, b, w)
+    {
+    }
 
     /// Construct a color vector from ArrayBase (needed to play nice with Eigen)
-    template <typename Derived> Color4f(const Eigen::ArrayBase<Derived>& p) 
-        : Base(p) { }
+    template <typename Derived>
+    Color4f(const Eigen::ArrayBase<Derived>& p)
+        : Base(p)
+    {
+    }
 
     /// Assign a color vector from ArrayBase (needed to play nice with Eigen)
-    template <typename Derived> Color4f &operator=(const Eigen::ArrayBase<Derived>& p) {
+    template <typename Derived>
+    Color4f& operator=(const Eigen::ArrayBase<Derived>& p)
+    {
         this->Base::operator=(p);
         return *this;
     }
 
     /// Divide by the filter weight and convert into a \ref Color3f value
-    Color3f divideByFilterWeight() const {
+    Color3f divideByFilterWeight() const
+    {
         if (w() != 0)
             return head<3>() / w();
         else
@@ -117,7 +144,8 @@ public:
     }
 
     /// Return a human-readable string summary
-    std::string toString() const {
+    std::string toString() const
+    {
         return tfm::format("[%f, %f, %f, %f]", coeff(0), coeff(1), coeff(2), coeff(3));
     }
 };

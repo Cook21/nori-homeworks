@@ -24,7 +24,8 @@ NORI_NAMESPACE_BEGIN
 
 class Microfacet : public BSDF {
 public:
-    Microfacet(const PropertyList &propList) {
+    Microfacet(const PropertyList& propList)
+    {
         /* RMS surface roughness */
         m_alpha = propList.getFloat("alpha", 0.1f);
 
@@ -49,18 +50,21 @@ public:
     }
 
     /// Evaluate the BRDF for the given pair of directions
-    Color3f eval(const BSDFQueryRecord &bRec) const {
-    	throw NoriException("MicrofacetBRDF::eval(): not implemented!");
+    Color3f eval(const BSDFQueryRecord& bRec) const
+    {
+        throw NoriException("MicrofacetBRDF::eval(): not implemented!");
     }
 
     /// Evaluate the sampling density of \ref sample() wrt. solid angles
-    float pdf(const BSDFQueryRecord &bRec) const {
-    	throw NoriException("MicrofacetBRDF::pdf(): not implemented!");
+    float pdf(const BSDFQueryRecord& bRec) const
+    {
+        throw NoriException("MicrofacetBRDF::pdf(): not implemented!");
     }
 
     /// Sample the BRDF
-    Color3f sample(BSDFQueryRecord &bRec, const Point2f &_sample) const {
-    	throw NoriException("MicrofacetBRDF::sample(): not implemented!");
+    Color3f sample(BSDFQueryRecord& bRec, const Point2f& _sample) const
+    {
+        throw NoriException("MicrofacetBRDF::sample(): not implemented!");
 
         // Note: Once you have implemented the part that computes the scattered
         // direction, the last part of this function should simply return the
@@ -69,14 +73,16 @@ public:
         // return eval(bRec) * Frame::cosTheta(bRec.wo) / pdf(bRec);
     }
 
-    bool isDiffuse() const {
+    bool isDiffuse() const
+    {
         /* While microfacet BRDFs are not perfectly diffuse, they can be
            handled by sampling techniques for diffuse/non-specular materials,
            hence we return true here */
         return true;
     }
 
-    std::string toString() const {
+    std::string toString() const
+    {
         return tfm::format(
             "Microfacet[\n"
             "  alpha = %f,\n"
@@ -89,9 +95,9 @@ public:
             m_intIOR,
             m_extIOR,
             m_kd.toString(),
-            m_ks
-        );
+            m_ks);
     }
+
 private:
     float m_alpha;
     float m_intIOR, m_extIOR;

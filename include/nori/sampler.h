@@ -18,8 +18,8 @@
 
 #pragma once
 
-#include <nori/object.h>
 #include <memory>
+#include <nori/object.h>
 
 NORI_NAMESPACE_BEGIN
 
@@ -75,7 +75,7 @@ public:
      * initialize the sampler so that repeated program runs
      * always create the same image.
      */
-    virtual void prepare(const ImageBlock &block) = 0;
+    virtual void prepare(const ImageBlock& block) = 0;
 
     /**
      * \brief Prepare to generate new samples
@@ -102,6 +102,7 @@ public:
      * provided by this instance
      * */
     EClassType getClassType() const { return ESampler; }
+
 protected:
     size_t m_sampleCount;
 };

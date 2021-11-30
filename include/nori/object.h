@@ -60,7 +60,7 @@ public:
      * The default implementation does not support children and
      * simply throws an exception
      */
-    virtual void addChild(NoriObject *child);
+    virtual void addChild(NoriObject* child);
 
     /**
      * \brief Set the parent object
@@ -69,7 +69,7 @@ public:
      * notified when they are added to a parent object. The
      * default implementation does nothing.
      */
-    virtual void setParent(NoriObject *parent);
+    virtual void setParent(NoriObject* parent);
 
     /**
      * \brief Perform some action associated with the object
@@ -86,19 +86,29 @@ public:
 
     /// Return a brief string summary of the instance (for debugging purposes)
     virtual std::string toString() const = 0;
-    
+
     /// Turn a class type into a human-readable string
-    static std::string classTypeName(EClassType type) {
+    static std::string classTypeName(EClassType type)
+    {
         switch (type) {
-            case EScene:      return "scene";
-            case EMesh:       return "mesh";
-            case EBSDF:       return "bsdf";
-            case EEmitter:    return "emitter";
-            case ECamera:     return "camera";
-            case EIntegrator: return "integrator";
-            case ESampler:    return "sampler";
-            case ETest:       return "test";
-            default:          return "<unknown>";
+        case EScene:
+            return "scene";
+        case EMesh:
+            return "mesh";
+        case EBSDF:
+            return "bsdf";
+        case EEmitter:
+            return "emitter";
+        case ECamera:
+            return "camera";
+        case EIntegrator:
+            return "integrator";
+        case ESampler:
+            return "sampler";
+        case ETest:
+            return "test";
+        default:
+            return "<unknown>";
         }
     }
 };
@@ -111,7 +121,7 @@ public:
  */
 class NoriObjectFactory {
 public:
-    typedef std::function<NoriObject *(const PropertyList &)> Constructor;
+    typedef std::function<NoriObject*(const PropertyList&)> Constructor;
 
     /**
      * \brief Register an object constructor with the object factory
@@ -126,7 +136,7 @@ public:
      *     A function pointer to an anonymous function that is
      *     able to call the constructor of the class.
      */
-    static void registerClass(const std::string &name, const Constructor &constr);
+    static void registerClass(const std::string& name, const Constructor& constr);
 
     /**
      * \brief Construct an instance from the class of the given name
@@ -139,25 +149,29 @@ public:
      *     A list of properties that will be passed to the constructor
      *     of the class.
      */
-    static NoriObject *createInstance(const std::string &name,
-            const PropertyList &propList) {
+    static NoriObject* createInstance(const std::string& name,
+        const PropertyList& propList)
+    {
         if (!m_constructors || m_constructors->find(name) == m_constructors->end())
             throw NoriException("A constructor for class \"%s\" could not be found!", name);
         return (*m_constructors)[name](propList);
     }
+
 private:
-    static std::map<std::string, Constructor> *m_constructors;
+    static std::map<std::string, Constructor>* m_constructors;
 };
 
 /// Macro for registering an object constructor with the \ref NoriObjectFactory
-#define NORI_REGISTER_CLASS(cls, name) \
-    cls *cls ##_create(const PropertyList &list) { \
-        return new cls(list); \
-    } \
-    static struct cls ##_{ \
-        cls ##_() { \
-            NoriObjectFactory::registerClass(name, cls ##_create); \
-        } \
-    } cls ##__NORI_;
+#define NORI_REGISTER_CLASS(cls, name)                            \
+    cls* cls##_create(const PropertyList& list)                   \
+    {                                                             \
+        return new cls(list);                                     \
+    }                                                             \
+    static struct cls##_ {                                        \
+        cls##_()                                                  \
+        {                                                         \
+            NoriObjectFactory::registerClass(name, cls##_create); \
+        }                                                         \
+    } cls##__NORI_;
 
 NORI_NAMESPACE_END

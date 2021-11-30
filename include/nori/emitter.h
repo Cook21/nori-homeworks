@@ -27,7 +27,6 @@ NORI_NAMESPACE_BEGIN
  */
 class Emitter : public NoriObject {
 public:
-
     /**
      * \brief Return the type of object (i.e. Mesh/Emitter/etc.) 
      * provided by this instance

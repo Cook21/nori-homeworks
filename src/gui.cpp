@@ -1,33 +1,33 @@
-#include <nori/gui.h>
-#include <nori/block.h>
-#include <nanogui/shader.h>
 #include <nanogui/label.h>
-#include <nanogui/slider.h>
 #include <nanogui/layout.h>
 #include <nanogui/renderpass.h>
+#include <nanogui/shader.h>
+#include <nanogui/slider.h>
 #include <nanogui/texture.h>
+#include <nori/block.h>
+#include <nori/gui.h>
 
 NORI_NAMESPACE_BEGIN
 
-NoriScreen::NoriScreen(const ImageBlock &block)
- : nanogui::Screen(nanogui::Vector2i(block.getSize().x(), block.getSize().y() + 36),
-                   "Nori", false),
-   m_block(block) {
+NoriScreen::NoriScreen(const ImageBlock& block)
+    : nanogui::Screen(nanogui::Vector2i(block.getSize().x(), block.getSize().y() + 36),
+        "Nori", false)
+    , m_block(block)
+{
     using namespace nanogui;
     inc_ref();
 
     /* Add some UI elements to adjust the exposure value */
-    Widget *panel = new Widget(this);
+    Widget* panel = new Widget(this);
     panel->set_layout(new BoxLayout(Orientation::Horizontal, Alignment::Middle, 10, 10));
     new Label(panel, "Exposure value: ", "sans-bold");
-    Slider *slider = new Slider(panel);
+    Slider* slider = new Slider(panel);
     slider->set_value(0.5f);
     slider->set_fixed_width(150);
     slider->set_callback(
         [&](float value) {
             m_scale = std::pow(2.f, (value - 0.5f) * 20);
-        }
-    );
+        });
 
     panel->set_size(nanogui::Vector2i(block.getSize().x(), block.getSize().y()));
     perform_layout();
@@ -75,8 +75,7 @@ NoriScreen::NoriScreen(const ImageBlock &block)
             vec4 color = texture(source, uv);
             color *= scale / color.w;
             out_color = vec4(toSRGB(color.r), toSRGB(color.g), toSRGB(color.b), 1);
-        })"
-    );
+        })");
 
     // Draw 2 triangles
     uint32_t indices[3 * 2] = {
@@ -90,10 +89,10 @@ NoriScreen::NoriScreen(const ImageBlock &block)
         0.f, 1.f
     };
 
-    m_shader->set_buffer("indices", VariableType::UInt32, {3*2}, indices);
-    m_shader->set_buffer("position", VariableType::Float32, {4, 2}, positions);
+    m_shader->set_buffer("indices", VariableType::UInt32, { 3 * 2 }, indices);
+    m_shader->set_buffer("position", VariableType::Float32, { 4, 2 }, positions);
 
-    const Vector2i &size = m_block.getSize();
+    const Vector2i& size = m_block.getSize();
     m_shader->set_uniform("size", nanogui::Vector2i(size.x(), size.y()));
     m_shader->set_uniform("borderSize", m_block.getBorderSize());
 
@@ -102,7 +101,7 @@ NoriScreen::NoriScreen(const ImageBlock &block)
         Texture::PixelFormat::RGBA,
         Texture::ComponentFormat::Float32,
         nanogui::Vector2i(size.x() + 2 * m_block.getBorderSize(),
-                          size.y() + 2 * m_block.getBorderSize()),
+            size.y() + 2 * m_block.getBorderSize()),
         Texture::InterpolationMode::Nearest,
         Texture::InterpolationMode::Nearest);
 
@@ -110,18 +109,18 @@ NoriScreen::NoriScreen(const ImageBlock &block)
     set_visible(true);
 }
 
-
-void NoriScreen::draw_contents() {
+void NoriScreen::draw_contents()
+{
     // Reload the partially rendered image onto the GPU
     m_block.lock();
-    const Vector2i &size = m_block.getSize();
+    const Vector2i& size = m_block.getSize();
     m_shader->set_uniform("scale", m_scale);
     m_renderPass->resize(framebuffer_size());
     m_renderPass->begin();
     m_renderPass->set_viewport(nanogui::Vector2i(0, 0),
-                               nanogui::Vector2i(m_pixel_ratio * size[0],
-                                                 m_pixel_ratio * size[1]));
-    m_texture->upload((uint8_t *) m_block.data());
+        nanogui::Vector2i(m_pixel_ratio * size[0],
+            m_pixel_ratio * size[1]));
+    m_texture->upload((uint8_t*)m_block.data());
     m_shader->set_texture("source", m_texture);
     m_shader->begin();
     m_shader->draw_array(nanogui::Shader::PrimitiveType::Triangle, 0, 6, true);

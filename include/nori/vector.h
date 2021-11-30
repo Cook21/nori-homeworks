@@ -33,45 +33,61 @@ NORI_NAMESPACE_BEGIN
 /**
  * \brief Generic N-dimensional vector data structure based on Eigen::Matrix
  */
-template <typename _Scalar, int _Dimension> struct TVector : public Eigen::Matrix<_Scalar, _Dimension, 1> {
+template <typename _Scalar, int _Dimension>
+struct TVector : public Eigen::Matrix<_Scalar, _Dimension, 1> {
 public:
     enum {
         Dimension = _Dimension
     };
 
-    typedef _Scalar                             Scalar;
+    typedef _Scalar Scalar;
     typedef Eigen::Matrix<Scalar, Dimension, 1> Base;
-    typedef TVector<Scalar, Dimension>          VectorType;
-    typedef TPoint<Scalar, Dimension>           PointType;
+    typedef TVector<Scalar, Dimension> VectorType;
+    typedef TPoint<Scalar, Dimension> PointType;
 
     /// Create a new vector with constant component vlaues
-    TVector(Scalar value = (Scalar) 0) { Base::setConstant(value); }
+    TVector(Scalar value = (Scalar)0) { Base::setConstant(value); }
 
     /// Create a new 2D vector (type error if \c Dimension != 2)
-    TVector(Scalar x, Scalar y) : Base(x, y) { }
+    TVector(Scalar x, Scalar y)
+        : Base(x, y)
+    {
+    }
 
     /// Create a new 3D vector (type error if \c Dimension != 3)
-    TVector(Scalar x, Scalar y, Scalar z) : Base(x, y, z) { }
+    TVector(Scalar x, Scalar y, Scalar z)
+        : Base(x, y, z)
+    {
+    }
 
     /// Create a new 4D vector (type error if \c Dimension != 4)
-    TVector(Scalar x, Scalar y, Scalar z, Scalar w) : Base(x, y, z, w) { }
+    TVector(Scalar x, Scalar y, Scalar z, Scalar w)
+        : Base(x, y, z, w)
+    {
+    }
 
     /// Construct a vector from MatrixBase (needed to play nice with Eigen)
-    template <typename Derived> TVector(const Eigen::MatrixBase<Derived>& p)
-        : Base(p) { }
+    template <typename Derived>
+    TVector(const Eigen::MatrixBase<Derived>& p)
+        : Base(p)
+    {
+    }
 
     /// Assign a vector from MatrixBase (needed to play nice with Eigen)
-    template <typename Derived> TVector &operator=(const Eigen::MatrixBase<Derived>& p) {
+    template <typename Derived>
+    TVector& operator=(const Eigen::MatrixBase<Derived>& p)
+    {
         this->Base::operator=(p);
         return *this;
     }
 
     /// Return a human-readable string summary
-    std::string toString() const {
+    std::string toString() const
+    {
         std::string result;
-        for (size_t i=0; i<Dimension; ++i) {
+        for (size_t i = 0; i < Dimension; ++i) {
             result += std::to_string(this->coeff(i));
-            if (i+1 < Dimension)
+            if (i + 1 < Dimension)
                 result += ", ";
         }
         return "[" + result + "]";
@@ -81,45 +97,61 @@ public:
 /**
  * \brief Generic N-dimensional point data structure based on Eigen::Matrix
  */
-template <typename _Scalar, int _Dimension> struct TPoint : public Eigen::Matrix<_Scalar, _Dimension, 1> {
+template <typename _Scalar, int _Dimension>
+struct TPoint : public Eigen::Matrix<_Scalar, _Dimension, 1> {
 public:
     enum {
         Dimension = _Dimension
     };
 
-    typedef _Scalar                             Scalar;
+    typedef _Scalar Scalar;
     typedef Eigen::Matrix<Scalar, Dimension, 1> Base;
-    typedef TVector<Scalar, Dimension>          VectorType;
-    typedef TPoint<Scalar, Dimension>           PointType;
+    typedef TVector<Scalar, Dimension> VectorType;
+    typedef TPoint<Scalar, Dimension> PointType;
 
     /// Create a new point with constant component vlaues
-    TPoint(Scalar value = (Scalar) 0) { Base::setConstant(value); }
+    TPoint(Scalar value = (Scalar)0) { Base::setConstant(value); }
 
     /// Create a new 2D point (type error if \c Dimension != 2)
-    TPoint(Scalar x, Scalar y) : Base(x, y) { }
+    TPoint(Scalar x, Scalar y)
+        : Base(x, y)
+    {
+    }
 
     /// Create a new 3D point (type error if \c Dimension != 3)
-    TPoint(Scalar x, Scalar y, Scalar z) : Base(x, y, z) { }
+    TPoint(Scalar x, Scalar y, Scalar z)
+        : Base(x, y, z)
+    {
+    }
 
     /// Create a new 4D point (type error if \c Dimension != 4)
-    TPoint(Scalar x, Scalar y, Scalar z, Scalar w) : Base(x, y, z, w) { }
+    TPoint(Scalar x, Scalar y, Scalar z, Scalar w)
+        : Base(x, y, z, w)
+    {
+    }
 
     /// Construct a point from MatrixBase (needed to play nice with Eigen)
-    template <typename Derived> TPoint(const Eigen::MatrixBase<Derived>& p)
-        : Base(p) { }
+    template <typename Derived>
+    TPoint(const Eigen::MatrixBase<Derived>& p)
+        : Base(p)
+    {
+    }
 
     /// Assign a point from MatrixBase (needed to play nice with Eigen)
-    template <typename Derived> TPoint &operator=(const Eigen::MatrixBase<Derived>& p) {
+    template <typename Derived>
+    TPoint& operator=(const Eigen::MatrixBase<Derived>& p)
+    {
         this->Base::operator=(p);
         return *this;
     }
 
     /// Return a human-readable string summary
-    std::string toString() const {
+    std::string toString() const
+    {
         std::string result;
-        for (size_t i=0; i<Dimension; ++i) {
+        for (size_t i = 0; i < Dimension; ++i) {
             result += std::to_string(this->coeff(i));
-            if (i+1 < Dimension)
+            if (i + 1 < Dimension)
                 result += ", ";
         }
         return "[" + result + "]";
@@ -135,35 +167,43 @@ public:
         Dimension = 3
     };
 
-    typedef float                               Scalar;
+    typedef float Scalar;
     typedef Eigen::Matrix<Scalar, Dimension, 1> Base;
-    typedef TVector<Scalar, Dimension>          VectorType;
-    typedef TPoint<Scalar, Dimension>           PointType;
-
+    typedef TVector<Scalar, Dimension> VectorType;
+    typedef TPoint<Scalar, Dimension> PointType;
 
     /// Create a new normal with constant component vlaues
     Normal3f(Scalar value = 0.0f) { Base::setConstant(value); }
 
     /// Create a new 3D normal
-    Normal3f(Scalar x, Scalar y, Scalar z) : Base(x, y, z) { }
+    Normal3f(Scalar x, Scalar y, Scalar z)
+        : Base(x, y, z)
+    {
+    }
 
     /// Construct a normal from MatrixBase (needed to play nice with Eigen)
-    template <typename Derived> Normal3f(const Eigen::MatrixBase<Derived>& p)
-        : Base(p) { }
+    template <typename Derived>
+    Normal3f(const Eigen::MatrixBase<Derived>& p)
+        : Base(p)
+    {
+    }
 
     /// Assign a normal from MatrixBase (needed to play nice with Eigen)
-    template <typename Derived> Normal3f &operator=(const Eigen::MatrixBase<Derived>& p) {
+    template <typename Derived>
+    Normal3f& operator=(const Eigen::MatrixBase<Derived>& p)
+    {
         this->Base::operator=(p);
         return *this;
     }
 
     /// Return a human-readable string summary
-    std::string toString() const {
+    std::string toString() const
+    {
         return tfm::format("[%f, %f, %f]", coeff(0), coeff(1), coeff(2));
     }
 };
 
 /// Complete the set {a} to an orthonormal base
-extern void coordinateSystem(const Vector3f &a, Vector3f &b, Vector3f &c);
+extern void coordinateSystem(const Vector3f& a, Vector3f& b, Vector3f& c);
 
 NORI_NAMESPACE_END

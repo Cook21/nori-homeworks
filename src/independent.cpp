@@ -16,8 +16,8 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <nori/sampler.h>
 #include <nori/block.h>
+#include <nori/sampler.h>
 #include <pcg32.h>
 
 NORI_NAMESPACE_BEGIN
@@ -32,43 +32,52 @@ NORI_NAMESPACE_BEGIN
  */
 class Independent : public Sampler {
 public:
-    Independent(const PropertyList &propList) {
-        m_sampleCount = (size_t) propList.getInteger("sampleCount", 1);
+    Independent(const PropertyList& propList)
+    {
+        m_sampleCount = (size_t)propList.getInteger("sampleCount", 1);
     }
 
     virtual ~Independent() { }
 
-    std::unique_ptr<Sampler> clone() const {
+    std::unique_ptr<Sampler> clone() const
+    {
         std::unique_ptr<Independent> cloned(new Independent());
         cloned->m_sampleCount = m_sampleCount;
         cloned->m_random = m_random;
         return std::move(cloned);
     }
 
-    void prepare(const ImageBlock &block) {
+    void prepare(const ImageBlock& block)
+    {
         m_random.seed(
             block.getOffset().x(),
-            block.getOffset().y()
-        );
+            block.getOffset().y());
     }
 
-    void generate() { /* No-op for this sampler */ }
-    void advance()  { /* No-op for this sampler */ }
+    void generate()
+    { /* No-op for this sampler */
+    }
+    void advance()
+    { /* No-op for this sampler */
+    }
 
-    float next1D() {
+    float next1D()
+    {
         return m_random.nextFloat();
     }
-    
-    Point2f next2D() {
+
+    Point2f next2D()
+    {
         return Point2f(
             m_random.nextFloat(),
-            m_random.nextFloat()
-        );
+            m_random.nextFloat());
     }
 
-    std::string toString() const {
+    std::string toString() const
+    {
         return tfm::format("Independent[sampleCount=%i]", m_sampleCount);
     }
+
 protected:
     Independent() { }
 

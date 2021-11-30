@@ -54,22 +54,22 @@ public:
      *     Samples will be convolved with the image reconstruction
      *     filter provided here.
      */
-    ImageBlock(const Vector2i &size, const ReconstructionFilter *filter);
-    
+    ImageBlock(const Vector2i& size, const ReconstructionFilter* filter);
+
     /// Release all memory
     ~ImageBlock();
-    
+
     /// Configure the offset of the block within the main image
-    void setOffset(const Point2i &offset) { m_offset = offset; }
+    void setOffset(const Point2i& offset) { m_offset = offset; }
 
     /// Return the offset of the block within the main image
-    inline const Point2i &getOffset() const { return m_offset; }
-    
+    inline const Point2i& getOffset() const { return m_offset; }
+
     /// Configure the size of the block within the main image
-    void setSize(const Point2i &size) { m_size = size; }
+    void setSize(const Point2i& size) { m_size = size; }
 
     /// Return the size of the block within the main image
-    inline const Vector2i &getSize() const { return m_size; }
+    inline const Vector2i& getSize() const { return m_size; }
 
     /// Return the border size in pixels
     inline int getBorderSize() const { return m_borderSize; }
@@ -80,16 +80,16 @@ public:
      * This entails normalizing all pixels and discarding
      * the border region.
      */
-    Bitmap *toBitmap() const;
+    Bitmap* toBitmap() const;
 
     /// Convert a bitmap into an image block
-    void fromBitmap(const Bitmap &bitmap);
+    void fromBitmap(const Bitmap& bitmap);
 
     /// Clear all contents
     void clear() { setConstant(Color4f()); }
 
     /// Record a sample with the given position and radiance value
-    void put(const Point2f &pos, const Color3f &value);
+    void put(const Point2f& pos, const Color3f& value);
 
     /**
      * \brief Merge another image block into this one
@@ -97,24 +97,25 @@ public:
      * During the merge operation, this function locks 
      * the destination block using a mutex.
      */
-    void put(ImageBlock &b);
+    void put(ImageBlock& b);
 
     /// Lock the image block (using an internal mutex)
     inline void lock() const { m_mutex.lock(); }
-    
+
     /// Unlock the image block
     inline void unlock() const { m_mutex.unlock(); }
 
     /// Return a human-readable string summary
     std::string toString() const;
+
 protected:
     Point2i m_offset;
     Vector2i m_size;
     int m_borderSize = 0;
-    float *m_filter = nullptr;
+    float* m_filter = nullptr;
     float m_filterRadius = 0;
-    float *m_weightsX = nullptr;
-    float *m_weightsY = nullptr;
+    float* m_weightsX = nullptr;
+    float* m_weightsY = nullptr;
     float m_lookupFactor = 0;
     mutable tbb::mutex m_mutex;
 };
@@ -136,8 +137,8 @@ public:
      * \param blockSize
      *      Maximum size of the individual blocks
      */
-    BlockGenerator(const Vector2i &size, int blockSize);
-    
+    BlockGenerator(const Vector2i& size, int blockSize);
+
     /**
      * \brief Return the next block to be rendered
      *
@@ -145,12 +146,16 @@ public:
      *
      * \return \c false if there were no more blocks
      */
-    bool next(ImageBlock &block);
+    bool next(ImageBlock& block);
 
     /// Return the total number of blocks
     int getBlockCount() const { return m_blocksLeft; }
+
 protected:
-    enum EDirection { ERight = 0, EDown, ELeft, EUp };
+    enum EDirection { ERight = 0,
+        EDown,
+        ELeft,
+        EUp };
 
     Point2i m_block;
     Vector2i m_numBlocks;

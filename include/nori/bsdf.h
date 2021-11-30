@@ -40,13 +40,22 @@ struct BSDFQueryRecord {
     EMeasure measure;
 
     /// Create a new record for sampling the BSDF
-    BSDFQueryRecord(const Vector3f &wi)
-        : wi(wi), eta(1.f), measure(EUnknownMeasure) { }
+    BSDFQueryRecord(const Vector3f& wi)
+        : wi(wi)
+        , eta(1.f)
+        , measure(EUnknownMeasure)
+    {
+    }
 
     /// Create a new record for querying the BSDF
-    BSDFQueryRecord(const Vector3f &wi,
-            const Vector3f &wo, EMeasure measure)
-        : wi(wi), wo(wo), eta(1.f), measure(measure) { }
+    BSDFQueryRecord(const Vector3f& wi,
+        const Vector3f& wo, EMeasure measure)
+        : wi(wi)
+        , wo(wo)
+        , eta(1.f)
+        , measure(measure)
+    {
+    }
 };
 
 /**
@@ -68,7 +77,7 @@ public:
      *         when this is appropriate. A zero value means that sampling
      *         failed.
      */
-    virtual Color3f sample(BSDFQueryRecord &bRec, const Point2f &sample) const = 0;
+    virtual Color3f sample(BSDFQueryRecord& bRec, const Point2f& sample) const = 0;
 
     /**
      * \brief Evaluate the BSDF for a pair of directions and measure
@@ -79,7 +88,7 @@ public:
      * \return
      *     The BSDF value, evaluated for each color channel
      */
-    virtual Color3f eval(const BSDFQueryRecord &bRec) const = 0;
+    virtual Color3f eval(const BSDFQueryRecord& bRec) const = 0;
 
     /**
      * \brief Compute the probability of sampling \c bRec.wo
@@ -96,7 +105,7 @@ public:
      *     to the specified measure
      */
 
-    virtual float pdf(const BSDFQueryRecord &bRec) const = 0;
+    virtual float pdf(const BSDFQueryRecord& bRec) const = 0;
 
     /**
      * \brief Return the type of object (i.e. Mesh/BSDF/etc.)
