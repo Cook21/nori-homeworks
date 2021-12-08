@@ -21,6 +21,7 @@
 #include "nori/common.h"
 #include <cstdint>
 #include <nori/mesh.h>
+#include <array>
 
 NORI_NAMESPACE_BEGIN
 

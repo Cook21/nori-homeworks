@@ -19,7 +19,6 @@
 #include "nori/common.h"
 #include "nori/mesh.h"
 #include <Eigen/Geometry>
-#include <array>
 #include <chrono>
 #include <cstdint>
 #include <functional>
