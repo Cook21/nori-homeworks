@@ -142,7 +142,7 @@ struct WarpTest {
             } else if (warpType == Disk || warpType == Tent) {
                 x = sample.x() * 0.5f + 0.5f;
                 y = sample.y() * 0.5f + 0.5f;
-            } else {
+            } else { //Sphere
                 x = std::atan2(sample.y(), sample.x()) * INV_TWOPI;
                 if (x < 0)
                     x += 1;
