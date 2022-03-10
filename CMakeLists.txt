@@ -68,9 +68,10 @@ add_executable(nori
   include/nori/warp.h
 
   # Source code files
+  src/area.cpp
+  src/accel.cpp
   src/bitmap.cpp
   src/block.cpp
-  src/accel.cpp
   src/chi2test.cpp
   src/common.cpp
   src/diffuse.cpp
@@ -89,6 +90,7 @@ add_executable(nori
   src/ambientocclusion.cpp
   src/ttest.cpp
   src/warp.cpp
+  src/whitted.cpp
   src/microfacet.cpp
   src/mirror.cpp
   src/normals.cpp

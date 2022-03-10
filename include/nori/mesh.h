@@ -21,6 +21,7 @@
 #include <nori/bbox.h>
 #include <nori/frame.h>
 #include <nori/object.h>
+#include <nori/dpdf.h>
 
 NORI_NAMESPACE_BEGIN
 
@@ -159,6 +160,9 @@ public:
     /// Return the name of this mesh
     const std::string& getName() const { return m_name; }
 
+    ///返回采样点
+    void sample(Sampler* sampler, Point3f& samplePosOut, Vector3f& samplePosNormalOut, float& pdfOut);
+
     /// Return a human-readable summary of this instance
     std::string toString() const;
 
@@ -181,6 +185,7 @@ protected:
     BSDF* m_bsdf = nullptr; ///< BSDF of the surface
     Emitter* m_emitter = nullptr; ///< Associated emitter, if any
     BoundingBox3f m_bbox; ///< Bounding box of the mesh
+    DiscretePDF surfaceAreaDPDF;
 };
 
 NORI_NAMESPACE_END

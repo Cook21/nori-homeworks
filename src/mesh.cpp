@@ -16,12 +16,14 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "nori/common.h"
 #include <Eigen/Geometry>
 #include <nori/bbox.h>
 #include <nori/bsdf.h>
 #include <nori/emitter.h>
 #include <nori/mesh.h>
 #include <nori/warp.h>
+#include <stdint.h>
 
 NORI_NAMESPACE_BEGIN
 
@@ -39,6 +41,13 @@ void Mesh::activate()
         /* If no material was assigned, instantiate a diffuse BRDF */
         m_bsdf = static_cast<BSDF*>(
             NoriObjectFactory::createInstance("diffuse", PropertyList()));
+    }
+    if(m_emitter){
+        surfaceAreaDPDF.reserve(m_F.cols());
+        for(uint32_t i = 0;i<m_F.cols();i++){
+            surfaceAreaDPDF.append(surfaceArea(i));
+        }
+        surfaceAreaDPDF.normalize();
     }
 }
 
@@ -144,7 +153,21 @@ std::string Mesh::toString() const
         m_bsdf ? indent(m_bsdf->toString()) : std::string("null"),
         m_emitter ? indent(m_emitter->toString()) : std::string("null"));
 }
+void Mesh::sample(Sampler* sampler, Point3f& samplePosOut, Vector3f& samplePosNormalOut, float& pdfOut){
+    auto sampleIdx = surfaceAreaDPDF.sample(sampler->next1D(),pdfOut);
+    uint32_t i0 = m_F(0, sampleIdx), i1 = m_F(1, sampleIdx), i2 = m_F(2, sampleIdx);
+    const Point3f p0 = m_V.col(i0), p1 = m_V.col(i1), p2 = m_V.col(i2);
+    auto sample2d = sampler->next2D();
+    auto alpha = 1.-sqrt(1.-sample2d.x()),beta=sample2d.y()*sqrt(1.-sample2d.x());
+    auto gamma = 1-alpha-beta;
+    samplePosOut = alpha*p0+beta*p1+gamma*p2;
+    if(m_N.size()>0){
+        samplePosNormalOut=alpha * m_N.col(i0) + beta* m_N.col(i1)+gamma* m_N.col(i2);
+    }else{
+        samplePosNormalOut = ((p1-p0).cross(p2-p0)).normalized();
+    }
 
+}
 std::string Intersection::toString() const
 {
     if (!mesh)

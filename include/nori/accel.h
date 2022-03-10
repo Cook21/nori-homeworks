@@ -19,9 +19,10 @@
 #pragma once
 
 #include "nori/common.h"
+#include <array>
 #include <cstdint>
 #include <nori/mesh.h>
-#include <array>
+#include <stdint.h>
 
 NORI_NAMESPACE_BEGIN
 
@@ -32,6 +33,12 @@ NORI_NAMESPACE_BEGIN
  * through the geometry.
  */
 class Accel {
+    class Triangle {
+    public:
+        uint32_t meshIdx;
+        uint32_t idx;
+    };
+
 public:
     /**
      * \brief Register a triangle mesh for inclusion in the acceleration
@@ -73,10 +80,10 @@ private:
     class OctTreeNode {
     public:
         TBoundingBox<Point3f>* boundingBox {};
-        std::vector<uint32_t>* triangles;
+        std::vector<Triangle>* triangles;
         std::array<OctTreeNode*, 8> child { nullptr };
         //float sqrtDistanceToCamera=std::numeric_limits<float>::infinity();
-        OctTreeNode(TBoundingBox<Point3f>* boundingBox, std::vector<uint32_t>* triangles)
+        OctTreeNode(TBoundingBox<Point3f>* boundingBox, std::vector<Triangle>* triangles)
         {
             this->boundingBox = boundingBox;
             this->triangles = triangles;
@@ -95,7 +102,7 @@ private:
         }
     };
 
-    Mesh* m_mesh = nullptr; ///< Mesh (only a single one for now)
+    std::vector<Mesh*> m_mesh {}; ///< Mesh (only a single one for now)
     BoundingBox3f m_bbox; ///< Bounding box of the entire scene
     OctTreeNode* m_octTree = nullptr;
 };
