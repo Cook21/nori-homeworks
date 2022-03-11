@@ -38,10 +38,11 @@ void Accel::addMesh(Mesh* mesh)
     }
 }
 
-void Accel::build()
+void Accel::build(const Point3f& origin)
 {
+    sortedOrigin = origin;
     std::function<OctTreeNode*(TBoundingBox<Point3f>*, std::vector<Triangle>*, const std::vector<Mesh*>&, int depth)> buildTree;
-    buildTree = [&buildTree](TBoundingBox<Point3f>* box, std::vector<Triangle>* triangles, const std::vector<Mesh*>& meshes, int depth) -> OctTreeNode* {
+    buildTree = [&buildTree,&origin](TBoundingBox<Point3f>* box, std::vector<Triangle>* triangles, const std::vector<Mesh*>& meshes, int depth) -> OctTreeNode* {
         const int maxDepth = 10;
         const int maxTriangleCount = 16;
         if (triangles->size() == 0 || !box->hasVolume()) {
@@ -50,30 +51,30 @@ void Accel::build()
         } else if (triangles->size() <= maxTriangleCount || depth > maxDepth) {
             return new OctTreeNode(box, triangles);
         } else {
-            auto* parent = new OctTreeNode(box, nullptr);
+            auto* result = new OctTreeNode(box, nullptr);
             auto center = box->getCenter();
-            std::array<TBoundingBox<Point3f>*, 8> childBBox;
+            std::array<TBoundingBox<Point3f>*, 8> childBBoxes;
             std::array<std::vector<Triangle>*, 8> childTriangles;
             for (int i = 0; i < 8; i++) {
                 auto corner = box->getCorner(i);
-                childBBox[i] = new TBoundingBox<Point3f>(center);
-                childBBox[i]->expandBy(corner);
+                childBBoxes[i] = new TBoundingBox<Point3f>(center);
+                childBBoxes[i]->expandBy(corner);
                 childTriangles[i] = new std::vector<Triangle> {};
             }
             for (Triangle triangle : *triangles) {
                 TBoundingBox<Point3f> triangleBBox = meshes[triangle.meshIdx]->getBoundingBox(triangle.idx);
                 for (int i = 0; i < 8; i++) {
-                    if (childBBox[i]->overlaps(triangleBBox)) {
+                    if (childBBoxes[i]->overlaps(triangleBBox)) {
                         childTriangles[i]->emplace_back(triangle);
                     }
                 }
             }
             for (int i = 0; i < 8; i++) {
-                parent->child[i] = buildTree(childBBox[i], childTriangles[i], meshes, depth + 1);
+                result->childs[i] = buildTree(childBBoxes[i], childTriangles[i], meshes, depth + 1);
             }
+            result->childs=result->sortedChilds(origin);
             delete triangles; //不是叶子结点就释放
-
-            return parent;
+            return result;
         }
     };
     using namespace std::chrono;
@@ -93,31 +94,9 @@ void Accel::build()
     }
 
     m_octTree = buildTree(new TBoundingBox<Point3f>(m_bbox), triangles, m_mesh, 0);
+    
     auto end = high_resolution_clock::now();
     std::cout << "OctTree build time:" << duration_cast<milliseconds>(end - start).count() << "ms\n";
-}
-void Accel::sortTree(const Point3f& origin)
-{
-    std::function<void(OctTreeNode & node, const Point3f& origin)> sortOctTree;
-    sortOctTree = [&sortOctTree](OctTreeNode& node, const Point3f origin) -> void {
-        std::sort(node.child.begin(), node.child.end(), [&origin](OctTreeNode* a, OctTreeNode* b) -> bool {
-            if (a == b) {
-                return false;
-            } else if (a == nullptr) {
-                return false;
-            } else if (b == nullptr) {
-                return true;
-            } else {
-                return a->boundingBox->squaredDistanceTo(origin) < b->boundingBox->squaredDistanceTo(origin);
-            }
-        });
-        for (auto* i : node.child) {
-            if (i != nullptr) {
-                sortOctTree(*i, origin);
-            }
-        }
-    };
-    sortOctTree(*m_octTree, origin);
 }
 
 bool Accel::rayIntersect(const Ray3f& ray_, Intersection& its, bool shadowRay) const
@@ -148,7 +127,7 @@ bool Accel::rayIntersect(const Ray3f& ray_, Intersection& its, bool shadowRay) c
         return { didFound, itsTriangle };
     };
     std::function<std::pair<bool, Triangle>(const OctTreeNode& node, Ray3f& ray, Intersection& its, const std::vector<nori::Mesh*>& meshes)> octTreeSearch;
-    octTreeSearch = [&octTreeSearch](const OctTreeNode& node, Ray3f& ray, Intersection& its, const std::vector<nori::Mesh*>& meshes) -> std::pair<bool, Triangle> {
+    octTreeSearch = [&octTreeSearch,this](const OctTreeNode& node, Ray3f& ray, Intersection& its, const std::vector<nori::Mesh*>& meshes) -> std::pair<bool, Triangle> {
         bool didFound = false;
         Triangle itsTriangle = { 0, 0 };
         if (node.boundingBox->rayIntersect(ray)) {
@@ -164,9 +143,15 @@ bool Accel::rayIntersect(const Ray3f& ray_, Intersection& its, bool shadowRay) c
                     }
                 }
             } else {
+                std::array<OctTreeNode*, 8> sortedChildNodes;
+                if (ray.o == this->sortedOrigin) {
+                    sortedChildNodes=node.childs;
+                }else{
+                    sortedChildNodes = node.sortedChilds(ray.o);
+                }
                 for (int i = 0; i < 8; i++) {
-                    if (node.child[i] != nullptr) {
-                        auto result = octTreeSearch(*(node.child[i]), ray, its, meshes);
+                    if (sortedChildNodes[i] != nullptr) {
+                        auto result = octTreeSearch(*(sortedChildNodes[i]), ray, its, meshes);
                         if (result.first) {
                             didFound = result.first;
                             itsTriangle = result.second;
@@ -194,8 +179,8 @@ bool Accel::rayIntersect(const Ray3f& ray_, Intersection& its, bool shadowRay) c
                 }
             } else {
                 for (int i = 0; i < 8; i++) {
-                    if (node.child[i] != nullptr) {
-                        auto result = octTreeSearchForShadowRay(*(node.child[i]), ray, meshes);
+                    if (node.childs[i] != nullptr) {
+                        auto result = octTreeSearchForShadowRay(*(node.childs[i]), ray, meshes);
                         if (result.first) {
                             didFound = true;
                             break;
@@ -210,15 +195,16 @@ bool Accel::rayIntersect(const Ray3f& ray_, Intersection& its, bool shadowRay) c
     Ray3f ray(ray_); /// Make a copy of the ray (we will need to update its '.maxt' value), maxt acts as a z-buffer
 
     //1. original method: Brute force search through all triangles
-    //auto [didFoundIntersection, itsTriangle] = bruteForceSearch(ray, its, shadowRay, m_mesh);
-
+    /*
+    auto [didFoundIntersection, itsTriangle] = bruteForceSearch(ray, its, shadowRay, m_mesh);
+    auto result = bruteForceSearch(ray, its, shadowRay, m_mesh);
+    didFoundIntersection = result.first;
+    itsTriangle = result.second;
+    */
     //2. acclerated method
-
     bool didFoundIntersection = false;
     Triangle itsTriangle = { 0, 0 };
-    // auto result = bruteForceSearch(ray, its, shadowRay, m_mesh);
-    // didFoundIntersection = result.first;
-    // itsTriangle = result.second;
+
     if (shadowRay) {
         auto result = octTreeSearchForShadowRay(*m_octTree, ray, m_mesh);
         didFoundIntersection = result.first;

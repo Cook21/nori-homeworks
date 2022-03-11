@@ -20,6 +20,7 @@
 
 #include "nori/common.h"
 #include <array>
+#include <cmath>
 #include <cstdint>
 #include <nori/mesh.h>
 #include <stdint.h>
@@ -49,8 +50,7 @@ public:
     void addMesh(Mesh* mesh);
 
     /// Build the acceleration data structure (currently a no-op)
-    void build();
-    void sortTree(const Point3f& origin);
+    void build(const Point3f& origin);
 
     /// Return an axis-aligned box that bounds the scene
     const BoundingBox3f& getBoundingBox() const { return m_bbox; }
@@ -81,7 +81,7 @@ private:
     public:
         TBoundingBox<Point3f>* boundingBox {};
         std::vector<Triangle>* triangles;
-        std::array<OctTreeNode*, 8> child { nullptr };
+        std::array<OctTreeNode*, 8> childs { nullptr };
         //float sqrtDistanceToCamera=std::numeric_limits<float>::infinity();
         OctTreeNode(TBoundingBox<Point3f>* boundingBox, std::vector<Triangle>* triangles)
         {
@@ -90,7 +90,7 @@ private:
         }
         ~OctTreeNode()
         {
-            for (auto i : child) {
+            for (auto i : childs) {
                 delete i;
             }
             delete boundingBox;
@@ -100,11 +100,34 @@ private:
         {
             return !(triangles == nullptr);
         }
+        std::array<OctTreeNode*, 8> sortedChilds(const Point3f& origin) const
+        {
+            std::array<OctTreeNode*, 8> result { this->childs };
+            std::sort(result.begin(), result.end(), [&origin](OctTreeNode* a, OctTreeNode* b) -> bool {
+                if (b == nullptr) {
+                    return true;
+                } else if (a == nullptr) {
+                    return false;
+                } else {
+                    return a->boundingBox->squaredDistanceTo(origin) < b->boundingBox->squaredDistanceTo(origin);
+                }
+            });
+            return result;
+        }
+        void sort(const Point3f& origin)
+        {
+            childs = this->sortedChilds(origin);
+            for (auto child : childs) {
+                if(child)
+                    child->sort(origin);
+            }
+        }
     };
 
     std::vector<Mesh*> m_mesh {}; ///< Mesh (only a single one for now)
     BoundingBox3f m_bbox; ///< Bounding box of the entire scene
     OctTreeNode* m_octTree = nullptr;
+    Point3f sortedOrigin { NAN };
 };
 
 NORI_NAMESPACE_END

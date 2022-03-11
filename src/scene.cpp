@@ -40,12 +40,13 @@ Scene::~Scene()
 
 void Scene::activate()
 {
-    m_accel->build();
+    
 
     if (!m_integrator)
         throw NoriException("No integrator was specified!");
     if (!m_camera)
         throw NoriException("No camera was specified!");
+    m_accel->build(m_camera->getPosition());
 
     if (!m_sampler) {
         /* Create a default (independent) sampler */
@@ -53,7 +54,6 @@ void Scene::activate()
             NoriObjectFactory::createInstance("independent", PropertyList()));
     }
 
-    m_accel->sortTree(m_camera->getPosition());
 
     cout << endl;
     cout << "Configuration: " << toString() << endl;
