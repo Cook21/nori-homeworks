@@ -72,7 +72,7 @@ void Accel::build(const Point3f& origin)
             for (int i = 0; i < 8; i++) {
                 result->childs[i] = buildTree(childBBoxes[i], childTriangles[i], meshes, depth + 1);
             }
-            result->childs=result->sortedChilds(origin);
+            result->childs=result->sortedChilds(origin); //排序
             delete triangles; //不是叶子结点就释放
             return result;
         }
