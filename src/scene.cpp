@@ -40,8 +40,6 @@ Scene::~Scene()
 
 void Scene::activate()
 {
-    
-
     if (!m_integrator)
         throw NoriException("No integrator was specified!");
     if (!m_camera)
@@ -53,7 +51,13 @@ void Scene::activate()
         m_sampler = static_cast<Sampler*>(
             NoriObjectFactory::createInstance("independent", PropertyList()));
     }
-
+    for(size_t i=0;i < m_meshes.size();i++){
+        if(m_meshes[i]->isEmitter()){
+            emitterSurfaceAreaDPDF.append(m_meshes[i]->getSurfaceArea());
+            emitterIdx.push_back(i);
+        }
+    }
+    emitterSurfaceAreaDPDF.normalize();
 
     cout << endl;
     cout << "Configuration: " << toString() << endl;

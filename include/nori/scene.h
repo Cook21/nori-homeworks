@@ -19,6 +19,7 @@
 #pragma once
 
 #include <nori/accel.h>
+#include <nori/sampler.h>
 
 NORI_NAMESPACE_BEGIN
 
@@ -118,6 +119,16 @@ public:
     /// Return a string summary of the scene (for debugging purposes)
     std::string toString() const;
 
+    Mesh* sampleEmitter(Sampler* sampler, float& pdfOut) const
+    {
+        if (emitterSurfaceAreaDPDF.size() > 0) {
+            auto id = emitterSurfaceAreaDPDF.sample(sampler->next1D(), pdfOut);
+            return m_meshes[emitterIdx[id]];
+        } else {
+            return nullptr;
+        }
+    }
+
     EClassType getClassType() const { return EScene; }
 
 private:
@@ -126,6 +137,8 @@ private:
     Sampler* m_sampler = nullptr;
     Camera* m_camera = nullptr;
     Accel* m_accel = nullptr;
+    DiscretePDF emitterSurfaceAreaDPDF;
+    std::vector<uint32_t> emitterIdx {};
 };
 
 NORI_NAMESPACE_END

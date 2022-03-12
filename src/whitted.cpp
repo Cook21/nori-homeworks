@@ -3,6 +3,7 @@
 #include "nori/mesh.h"
 #include "nori/sampler.h"
 #include "nori/vector.h"
+#include <nori/bsdf.h>
 #include <nori/emitter.h>
 #include <nori/integrator.h>
 #include <nori/scene.h>
@@ -22,10 +23,14 @@ public:
         } else {
             Point3f shadingPoint = its.p;
             Normal3f shadingPointNormal = its.shFrame.n;
-            Color3f result{0.,0.,0.};
-            int count=0;
-            for (auto mesh : scene->getMeshes()) {
-                if (mesh->isEmitter()) {
+            const BSDF* bsdf = its.mesh->getBSDF();
+            Color3f result { 0., 0., 0. };
+            if (its.mesh->isEmitter()) {
+                result = its.mesh->getEmitter()->getRadiance();
+            } else {
+                float emitterPdf;
+                auto mesh = scene->sampleEmitter(sampler, emitterPdf);
+                if (mesh != nullptr) {
                     Point3f lightSamplePos;
                     Vector3f lightSamplePosNormal;
                     float pdf;
@@ -34,15 +39,17 @@ public:
                     float distanceSquared = outDir.dot(outDir);
                     //算完距离之后单位化
                     outDir.normalize();
+                    Vector3f wiLocal = its.shFrame.toLocal(-ray.d);
+                    Vector3f woLocal = its.shFrame.toLocal(outDir);
+                    Color3f bsdfValue = bsdf->eval(BSDFQueryRecord(wiLocal, woLocal, ESolidAngle));
                     Intersection its;
                     scene->rayIntersect(Ray3f(shadingPoint, outDir), its);
                     if (its.mesh == mesh) {
-                        result += mesh->getEmitter()->sample(-outDir, lightSamplePosNormal, distanceSquared) * fmaxf(0.0, shadingPointNormal.dot(outDir)) / pdf ;
-                        count++;
+                        result += bsdfValue * mesh->getEmitter()->sample(-outDir, lightSamplePosNormal, distanceSquared) * fmaxf(0.0, shadingPointNormal.dot(outDir)) / (pdf * emitterPdf);
                     }
                 }
             }
-            return result / count;
+            return result;
         }
     }
     /// Return a human-readable description for debugging purposes

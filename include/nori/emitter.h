@@ -27,7 +27,8 @@ NORI_NAMESPACE_BEGIN
  */
 class Emitter : public NoriObject {
 public:
-    virtual Color3f sample(Vector3f wiWorld, Vector3f normalWorld, float distanceSquared) = 0;
+    virtual Color3f sample(Vector3f wiWorld, Vector3f normalWorld, float distanceSquared) const = 0;
+    virtual Color3f getRadiance() const = 0;
     /**
      * \brief Return the type of object (i.e. Mesh/Emitter/etc.) 
      * provided by this instance

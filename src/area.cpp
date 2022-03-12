@@ -13,9 +13,12 @@ public:
     {
         radiance = props.getColor("radiance");
     }
-    Color3f sample(Vector3f wiWorld, Vector3f normalWorld, float distanceSquared) override {
+    Color3f sample(Vector3f wiWorld, Vector3f normalWorld, float distanceSquared) const override {
         Color3f result = radiance * std::max(wiWorld.dot(normalWorld),0.0f) / distanceSquared;
         return result;
+    }
+    Color3f getRadiance() const {
+        return radiance;
     }
     /// Return a human-readable description for debugging purposes
     std::string toString() const override

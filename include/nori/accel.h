@@ -102,7 +102,7 @@ private:
         }
         std::array<OctTreeNode*, 8> sortedChilds(const Point3f& origin) const
         {
-            std::array<OctTreeNode*, 8> result { this->childs };
+            std::array<OctTreeNode*, 8> result = this->childs;
             std::sort(result.begin(), result.end(), [&origin](OctTreeNode* a, OctTreeNode* b) -> bool {
                 if (b == nullptr) {
                     return true;

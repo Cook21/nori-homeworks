@@ -37,6 +37,7 @@ Mesh::~Mesh()
 
 void Mesh::activate()
 {
+    std::cout << "mesh activate\n";
     if (!m_bsdf) {
         /* If no material was assigned, instantiate a diffuse BRDF */
         m_bsdf = static_cast<BSDF*>(
@@ -154,8 +155,9 @@ std::string Mesh::toString() const
         m_emitter ? indent(m_emitter->toString()) : std::string("null"));
 }
 void Mesh::sample(Sampler* sampler, Point3f& samplePosOut, Vector3f& samplePosNormalOut, float& pdfOut){
-    auto sampleIdx = surfaceAreaDPDF.sample(sampler->next1D(),pdfOut);
-    uint32_t i0 = m_F(0, sampleIdx), i1 = m_F(1, sampleIdx), i2 = m_F(2, sampleIdx);
+    auto faceIdx = surfaceAreaDPDF.sample(sampler->next1D(),pdfOut);
+    pdfOut /= surfaceArea(faceIdx);
+    uint32_t i0 = m_F(0, faceIdx), i1 = m_F(1, faceIdx), i2 = m_F(2, faceIdx);
     const Point3f p0 = m_V.col(i0), p1 = m_V.col(i1), p2 = m_V.col(i2);
     auto sample2d = sampler->next2D();
     auto alpha = 1.-sqrt(1.-sample2d.x()),beta=sample2d.y()*sqrt(1.-sample2d.x());

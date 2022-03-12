@@ -42,7 +42,7 @@ void Accel::build(const Point3f& origin)
 {
     sortedOrigin = origin;
     std::function<OctTreeNode*(TBoundingBox<Point3f>*, std::vector<Triangle>*, const std::vector<Mesh*>&, int depth)> buildTree;
-    buildTree = [&buildTree,&origin](TBoundingBox<Point3f>* box, std::vector<Triangle>* triangles, const std::vector<Mesh*>& meshes, int depth) -> OctTreeNode* {
+    buildTree = [&buildTree, &origin](TBoundingBox<Point3f>* box, std::vector<Triangle>* triangles, const std::vector<Mesh*>& meshes, int depth) -> OctTreeNode* {
         const int maxDepth = 10;
         const int maxTriangleCount = 16;
         if (triangles->size() == 0 || !box->hasVolume()) {
@@ -72,7 +72,7 @@ void Accel::build(const Point3f& origin)
             for (int i = 0; i < 8; i++) {
                 result->childs[i] = buildTree(childBBoxes[i], childTriangles[i], meshes, depth + 1);
             }
-            result->childs=result->sortedChilds(origin); //排序
+            result->childs = result->sortedChilds(origin); //排序
             delete triangles; //不是叶子结点就释放
             return result;
         }
@@ -94,7 +94,7 @@ void Accel::build(const Point3f& origin)
     }
 
     m_octTree = buildTree(new TBoundingBox<Point3f>(m_bbox), triangles, m_mesh, 0);
-    
+
     auto end = high_resolution_clock::now();
     std::cout << "OctTree build time:" << duration_cast<milliseconds>(end - start).count() << "ms\n";
 }
@@ -127,7 +127,7 @@ bool Accel::rayIntersect(const Ray3f& ray_, Intersection& its, bool shadowRay) c
         return { didFound, itsTriangle };
     };
     std::function<std::pair<bool, Triangle>(const OctTreeNode& node, Ray3f& ray, Intersection& its, const std::vector<nori::Mesh*>& meshes)> octTreeSearch;
-    octTreeSearch = [&octTreeSearch,this](const OctTreeNode& node, Ray3f& ray, Intersection& its, const std::vector<nori::Mesh*>& meshes) -> std::pair<bool, Triangle> {
+    octTreeSearch = [&octTreeSearch, this](const OctTreeNode& node, Ray3f& ray, Intersection& its, const std::vector<nori::Mesh*>& meshes) -> std::pair<bool, Triangle> {
         bool didFound = false;
         Triangle itsTriangle = { 0, 0 };
         if (node.boundingBox->rayIntersect(ray)) {
@@ -135,18 +135,65 @@ bool Accel::rayIntersect(const Ray3f& ray_, Intersection& its, bool shadowRay) c
                 for (auto triangle : *(node.triangles)) {
                     float u, v, t;
                     if (meshes[triangle.meshIdx]->rayIntersect(triangle.idx, ray, u, v, t)) {
-                        ray.maxt = its.t = t;
+                        
                         its.uv = Point2f(u, v);
                         its.mesh = meshes[triangle.meshIdx];
-                        didFound = true;
                         itsTriangle = triangle;
+                        /* At this point, we now know that there is an intersection,
+                        and we know the triangle index of the closest such intersection.
+                        The following computes a number of additional properties which
+                        characterize the intersection (normals, texture coordinates, etc..)
+                        */
+                        /* Find the barycentric coordinates */
+                        Vector3f bary;
+                        bary << 1 - its.uv.sum(), its.uv;
+
+                        /* References to all relevant mesh buffers */
+                        const Mesh* mesh = its.mesh;
+                        const MatrixXf& V = mesh->getVertexPositions();
+                        const MatrixXf& N = mesh->getVertexNormals();
+                        const MatrixXf& UV = mesh->getVertexTexCoords();
+                        const MatrixXu& F = mesh->getIndices();
+
+                        /* Vertex indices of the triangle */
+                        uint32_t idx0 = F(0, itsTriangle.idx), idx1 = F(1, itsTriangle.idx), idx2 = F(2, itsTriangle.idx);
+
+                        Point3f p0 = V.col(idx0), p1 = V.col(idx1), p2 = V.col(idx2);
+
+                        /* Compute the intersection positon accurately using barycentric coordinates */
+                        its.p = bary.x() * p0 + bary.y() * p1 + bary.z() * p2;
+                        //判断交点是否在包围盒内
+                        if(node.boundingBox->contains(its.p)){
+                            didFound = true;
+                            ray.maxt = its.t = t;                
+                        }else{
+                            continue;
+                        }
+                        /* Compute proper texture coordinates if provided by the mesh */
+                        if (UV.size() > 0)
+                            its.uv = bary.x() * UV.col(idx0) + bary.y() * UV.col(idx1) + bary.z() * UV.col(idx2);
+
+                        /* Compute the geometry frame */
+                        its.geoFrame = Frame((p1 - p0).cross(p2 - p0).normalized());
+
+                        if (N.size() > 0) {
+                            /* Compute the shading frame. Note that for simplicity, 
+                            the current implementation doesn't attempt to provide
+                            tangents that are continuous across the surface. That
+                            means that this code will need to be modified to be able
+                            use anisotropic BRDFs, which need tangent continuity */
+                            its.shFrame = Frame(
+                                (bary.x() * N.col(idx0) + bary.y() * N.col(idx1) + bary.z() * N.col(idx2)).normalized());
+                        } else {
+                            its.shFrame = its.geoFrame;
+                        }
                     }
                 }
             } else {
                 std::array<OctTreeNode*, 8> sortedChildNodes;
-                if (ray.o == this->sortedOrigin) {
-                    sortedChildNodes=node.childs;
-                }else{
+                if ( ray.o == this->sortedOrigin) {
+                    sortedChildNodes = node.childs;
+                } else {
                     sortedChildNodes = node.sortedChilds(ray.o);
                 }
                 for (int i = 0; i < 8; i++) {
@@ -214,60 +261,7 @@ bool Accel::rayIntersect(const Ray3f& ray_, Intersection& its, bool shadowRay) c
         itsTriangle = result.second;
     }
 
-    if (shadowRay) {
-        return didFoundIntersection;
-    } else {
-        if (didFoundIntersection) {
-            /* At this point, we now know that there is an intersection,
-           and we know the triangle index of the closest such intersection.
-
-           The following computes a number of additional properties which
-           characterize the intersection (normals, texture coordinates, etc..)
-        */
-
-            /* Find the barycentric coordinates */
-            Vector3f bary;
-            bary << 1 - its.uv.sum(), its.uv;
-
-            /* References to all relevant mesh buffers */
-            const Mesh* mesh = its.mesh;
-            const MatrixXf& V = mesh->getVertexPositions();
-            const MatrixXf& N = mesh->getVertexNormals();
-            const MatrixXf& UV = mesh->getVertexTexCoords();
-            const MatrixXu& F = mesh->getIndices();
-
-            /* Vertex indices of the triangle */
-            uint32_t idx0 = F(0, itsTriangle.idx), idx1 = F(1, itsTriangle.idx), idx2 = F(2, itsTriangle.idx);
-
-            Point3f p0 = V.col(idx0), p1 = V.col(idx1), p2 = V.col(idx2);
-
-            /* Compute the intersection positon accurately
-           using barycentric coordinates */
-            its.p = bary.x() * p0 + bary.y() * p1 + bary.z() * p2;
-
-            /* Compute proper texture coordinates if provided by the mesh */
-            if (UV.size() > 0)
-                its.uv = bary.x() * UV.col(idx0) + bary.y() * UV.col(idx1) + bary.z() * UV.col(idx2);
-
-            /* Compute the geometry frame */
-            its.geoFrame = Frame((p1 - p0).cross(p2 - p0).normalized());
-
-            if (N.size() > 0) {
-                /* Compute the shading frame. Note that for simplicity,
-               the current implementation doesn't attempt to provide
-               tangents that are continuous across the surface. That
-               means that this code will need to be modified to be able
-               use anisotropic BRDFs, which need tangent continuity */
-
-                its.shFrame = Frame(
-                    (bary.x() * N.col(idx0) + bary.y() * N.col(idx1) + bary.z() * N.col(idx2)).normalized());
-            } else {
-                its.shFrame = its.geoFrame;
-            }
-        }
-
-        return didFoundIntersection;
-    }
+    return didFoundIntersection;
 }
 
 NORI_NAMESPACE_END

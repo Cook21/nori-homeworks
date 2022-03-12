@@ -34,7 +34,7 @@ public:
             Vector3f outDir = its.shFrame.toWorld(sample);
             if (!scene->rayIntersect(Ray3f(shadingPoint, outDir))) {
                 //Monte Carlo积分，要除以PDF
-                result = INV_PI * ambientRadiance * normal.dot(outDir.normalized()) / probabilityDensity;
+                result = INV_PI * ambientRadiance * std::max(normal.dot(outDir.normalized()),0.0f) / probabilityDensity;
             }
             return result;
         }
