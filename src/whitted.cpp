@@ -42,9 +42,10 @@ public:
                     Vector3f wiLocal = its.shFrame.toLocal(-ray.d);
                     Vector3f woLocal = its.shFrame.toLocal(outDir);
                     Color3f bsdfValue = bsdf->eval(BSDFQueryRecord(wiLocal, woLocal, ESolidAngle));
-                    Intersection its;
-                    scene->rayIntersect(Ray3f(shadingPoint, outDir), its);
-                    if (its.mesh == mesh) {
+                    auto secondaryRay = Ray3f(shadingPoint, outDir);
+                    Intersection shadowRayIts;
+                    scene->shadowrayIntersect(secondaryRay,shadowRayIts);
+                    if (shadowRayIts.t*shadowRayIts.t >=  distanceSquared - Epsilon) {
                         result += bsdfValue * mesh->getEmitter()->sample(-outDir, lightSamplePosNormal, distanceSquared) * fmaxf(0.0, shadingPointNormal.dot(outDir)) / (pdf * emitterPdf);
                     }
                 }

@@ -17,7 +17,7 @@ public:
         Color3f result = radiance * std::max(wiWorld.dot(normalWorld),0.0f) / distanceSquared;
         return result;
     }
-    Color3f getRadiance() const {
+    Color3f getRadiance() const override {
         return radiance;
     }
     /// Return a human-readable description for debugging purposes

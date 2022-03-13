@@ -28,7 +28,8 @@ public:
             Vector3f outDir = lightPos - shadingPoint;
             float squareOfDir = outDir.dot(outDir);
             Color3f result;
-            if (scene->rayIntersect(Ray3f(shadingPoint, outDir))) {
+            Intersection shadowRayIts;
+            if (scene->shadowrayIntersect(Ray3f(shadingPoint, outDir),shadowRayIts)) {
                 result = Color3f(0, 0, 0);
             } else {
                 result = .25 * INV_PI * INV_PI * lightEnergy * fmaxf(0.0, normal.dot(outDir.normalized())) / squareOfDir;

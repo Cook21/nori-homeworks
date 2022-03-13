@@ -93,9 +93,8 @@ public:
      *
      * \return \c true if an intersection was found
      */
-    bool rayIntersect(const Ray3f& ray) const
+    bool shadowrayIntersect(const Ray3f& ray,Intersection& its) const
     {
-        Intersection its; /* Unused */
         return m_accel->rayIntersect(ray, its, true);
     }
 

@@ -32,7 +32,8 @@ public:
             auto sample = Warp::squareToCosineHemisphere(seed);
             auto probabilityDensity = Warp::squareToCosineHemispherePdf(sample);
             Vector3f outDir = its.shFrame.toWorld(sample);
-            if (!scene->rayIntersect(Ray3f(shadingPoint, outDir))) {
+            Intersection shadowRayIts;
+            if (!scene->shadowrayIntersect(Ray3f(shadingPoint, outDir),shadowRayIts)) {
                 //Monte Carlo积分，要除以PDF
                 result = INV_PI * ambientRadiance * std::max(normal.dot(outDir.normalized()),0.0f) / probabilityDensity;
             }

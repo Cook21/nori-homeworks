@@ -19,9 +19,9 @@
 #pragma once
 
 #include <nori/bbox.h>
+#include <nori/dpdf.h>
 #include <nori/frame.h>
 #include <nori/object.h>
-#include <nori/dpdf.h>
 #include <vector>
 
 NORI_NAMESPACE_BEGIN
@@ -38,7 +38,7 @@ struct Intersection {
     /// Position of the surface intersection
     Point3f p;
     /// Unoccluded distance along the ray
-    float t;
+    float t = NAN;
     /// UV coordinates, if any
     Point2f uv;
     /// Shading frame (based on the shading normal)
@@ -164,22 +164,19 @@ public:
     ///返回采样点
     void sample(Sampler* sampler, Point3f& samplePosOut, Vector3f& samplePosNormalOut, float& pdfOut);
 
-    float getSurfaceArea() const{
+    float getSurfaceArea() const
+    {
         return surfaceAreaDPDF.getSum();
     }
 
     /// Return a human-readable summary of this instance
     std::string toString() const;
 
-    
-
     /**
      * \brief Return the type of object (i.e. Mesh/BSDF/etc.)
      * provided by this instance
      * */
     EClassType getClassType() const { return EMesh; }
-    
-
 
 protected:
     /// Create an empty mesh
@@ -195,7 +192,6 @@ protected:
     Emitter* m_emitter = nullptr; ///< Associated emitter, if any
     BoundingBox3f m_bbox; ///< Bounding box of the mesh
     DiscretePDF surfaceAreaDPDF;
-    
 };
 
 NORI_NAMESPACE_END

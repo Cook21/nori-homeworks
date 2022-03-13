@@ -50,7 +50,7 @@ public:
     void addMesh(Mesh* mesh);
 
     /// Build the acceleration data structure (currently a no-op)
-    void build(const Point3f& origin);
+    void build(const Point3f& cameraPos);
 
     /// Return an axis-aligned box that bounds the scene
     const BoundingBox3f& getBoundingBox() const { return m_bbox; }
@@ -77,6 +77,9 @@ public:
     bool rayIntersect(const Ray3f& ray, Intersection& its, bool shadowRay) const;
 
 private:
+    std::vector<Mesh*> m_mesh {}; ///< Mesh (only a single one for now)
+    BoundingBox3f m_bbox; ///< Bounding box of the entire scene
+    Point3f cameraPos { NAN };
     class OctTreeNode {
     public:
         TBoundingBox<Point3f>* boundingBox {};
@@ -100,10 +103,10 @@ private:
         {
             return !(triangles == nullptr);
         }
-        std::array<OctTreeNode*, 8> sortedChilds(const Point3f& origin) const
+        std::array<OctTreeNode*, 8> getSortedChilds(const Point3f& origin) const
         {
-            std::array<OctTreeNode*, 8> result = this->childs;
-            std::sort(result.begin(), result.end(), [&origin](OctTreeNode* a, OctTreeNode* b) -> bool {
+            std::array<OctTreeNode*, 8> sortedChilds = childs;
+            std::sort(sortedChilds.begin(), sortedChilds.end(), [&origin](OctTreeNode* a, OctTreeNode* b) -> bool {
                 if (b == nullptr) {
                     return true;
                 } else if (a == nullptr) {
@@ -112,22 +115,23 @@ private:
                     return a->boundingBox->squaredDistanceTo(origin) < b->boundingBox->squaredDistanceTo(origin);
                 }
             });
-            return result;
+
+            return sortedChilds;
         }
         void sort(const Point3f& origin)
         {
-            childs = this->sortedChilds(origin);
-            for (auto child : childs) {
-                if(child)
-                    child->sort(origin);
-            }
+            std::sort(childs.begin(), childs.end(), [&origin](OctTreeNode* a, OctTreeNode* b) -> bool {
+                if (b == nullptr) {
+                    return true;
+                } else if (a == nullptr) {
+                    return false;
+                } else {
+                    return a->boundingBox->squaredDistanceTo(origin) < b->boundingBox->squaredDistanceTo(origin);
+                }
+            });
         }
     };
-
-    std::vector<Mesh*> m_mesh {}; ///< Mesh (only a single one for now)
-    BoundingBox3f m_bbox; ///< Bounding box of the entire scene
     OctTreeNode* m_octTree = nullptr;
-    Point3f sortedOrigin { NAN };
 };
 
 NORI_NAMESPACE_END
