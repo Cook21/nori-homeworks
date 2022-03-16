@@ -17,6 +17,7 @@
 */
 
 #include <nori/bsdf.h>
+#include <nori/common.h>
 #include <nori/frame.h>
 
 NORI_NAMESPACE_BEGIN
@@ -26,6 +27,7 @@ class Dielectric : public BSDF {
 public:
     Dielectric(const PropertyList& propList)
     {
+        //IOR = Index Of Refraction
         /* Interior IOR (default: BK7 borosilicate optical glass) */
         m_intIOR = propList.getFloat("intIOR", 1.5046f);
 
@@ -47,7 +49,50 @@ public:
 
     Color3f sample(BSDFQueryRecord& bRec, const Point2f& sample) const
     {
-        throw NoriException("Unimplemented!");
+        //throw NoriException("Unimplemented!");
+        Vector3f normalLocal { 0., 0., 1. };
+        float cosThetaI = Frame::cosTheta(bRec.wi);
+        bool entering = (cosThetaI > 0.f);
+        float etaI, etaT;
+        if (entering) {
+            etaI = m_extIOR;
+            etaT = m_intIOR;
+        } else {
+            etaI = m_intIOR;
+            etaT = m_extIOR;
+            normalLocal = -normalLocal;
+            cosThetaI = -cosThetaI;
+        }
+        bRec.eta = etaI / etaT;
+        float sin2ThetaI = Frame::sinTheta2(bRec.wi);
+        float sin2ThetaT = bRec.eta * bRec.eta * sin2ThetaI;
+        if (sin2ThetaT >= 1.) { //全反射
+            bRec.wo = Vector3f { -bRec.wi.x(), -bRec.wi.y(), bRec.wi.z() };
+        } else {
+            //反射的比例，精确
+            float fre = fresnel(cosThetaI, etaI, etaT);
+            //反射的比例，近似
+            //float fre =  SchlicksFresnel(cosThetaI, etaI, etaT);
+            if (sample.x() < fre) {
+                bRec.wo = Vector3f { -bRec.wi.x(), -bRec.wi.y(), bRec.wi.z() };
+            } else {
+                float cosThetaT = std::sqrt(1. - sin2ThetaT);
+                //球坐标方法
+                
+                float thetaT;
+                if (entering) {
+                    thetaT = M_PI - acos(cosThetaT);
+                } else {
+                    thetaT = acos(cosThetaT);
+                }
+                float phiT = std::atan2(bRec.wi.y(), bRec.wi.x()) + M_PI;
+                bRec.wo = sphericalDirection(thetaT, phiT);
+                
+                //向量方法
+                //bRec.wo = bRec.eta * -bRec.wi + (bRec.eta * cosThetaI - cosThetaT) * normalLocal;
+            }
+        }
+        return Color3f(1.);
     }
 
     std::string toString() const
@@ -62,6 +107,13 @@ public:
 
 private:
     float m_intIOR, m_extIOR;
+    //Schlick’s approximation
+    float SchlicksFresnel(float cosThetaI, float etaI, float etaT) const
+    {
+        float temp = (etaI - etaT) / (etaI + etaT);
+        float r0 = temp * temp;
+        return r0 + (1. - r0) * pow((1 - cosThetaI), 5.);
+    }
 };
 
 NORI_REGISTER_CLASS(Dielectric, "dielectric");
