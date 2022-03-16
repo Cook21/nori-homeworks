@@ -131,7 +131,7 @@ Vector3f Warp::squareToUniformHemisphere(const Point2f& sample)
 
 float Warp::squareToUniformHemispherePdf(const Vector3f& v)
 {
-    if (v[2] >= 0) {
+    if (Frame::cosTheta(v) > 0) {
         return INV_TWOPI;
     } else {
         return 0.0;
@@ -149,10 +149,9 @@ Vector3f Warp::squareToCosineHemisphere(const Point2f& sample)
 
 float Warp::squareToCosineHemispherePdf(const Vector3f& v)
 {
-    if (v[2] >= 0) {
-        float r = sqrt(v[0] * v[0] + v[1] * v[1]);
-        float phi = atan(r / v[2]);
-        return cos(phi) * INV_PI;
+    float cosTheta = Frame::cosTheta(v);
+    if (cosTheta > 0) {
+        return cosTheta * INV_PI;
     } else {
         return 0;
     }
@@ -160,20 +159,20 @@ float Warp::squareToCosineHemispherePdf(const Vector3f& v)
 
 Vector3f Warp::squareToBeckmann(const Point2f& sample, float alpha)
 {
-    float theta = 2. * M_PI * sample[0];
-    float tanPhi2 = -alpha*alpha * log(1 - sample[1]);
-    float cosPhi = sqrt(1 / (1 + tanPhi2));
-    float sinPhi = sqrt(1. - cosPhi * cosPhi);
-    return Vector3f(cos(theta) * sinPhi, sin(theta) * sinPhi, cosPhi);
+    float phi = 2. * M_PI * sample[0];
+    float tanTheta2 = -alpha*alpha * log(1 - sample[1]);
+    float cosTheta = sqrt(1 / (1 + tanTheta2));
+    float sinTheta = sqrt(1. - cosTheta * cosTheta);
+    return Vector3f(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
 }
 
 float Warp::squareToBeckmannPdf(const Vector3f& m, float alpha)
 {
-    if (m[2] >= 0) {
-        float r = sqrt(m[0] * m[0] + m[1] * m[1]);
-        float phi = atan(r / m[2]);
+    float cosTheta = Frame::cosTheta(m);
+    if (cosTheta > 0) {
+        float tanTheta = Frame::tanTheta(m);
         float squareOfAlpha = alpha * alpha;
-        return INV_PI * exp(-tan(phi) * tan(phi) / squareOfAlpha) / squareOfAlpha / pow(cos(phi), 3);
+        return INV_PI * exp(-pow(tanTheta,2.0) / squareOfAlpha) / squareOfAlpha / pow(cosTheta, 3);
     } else {
         return 0;
     }

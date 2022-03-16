@@ -70,10 +70,10 @@ public:
             bRec.wo = Vector3f { -bRec.wi.x(), -bRec.wi.y(), bRec.wi.z() };
         } else {
             //反射的比例，精确
-            float fre = fresnel(cosThetaI, etaI, etaT);
+            float fresnelTerm = nori::fresnel(cosThetaI, etaI, etaT);
             //反射的比例，近似
             //float fre =  SchlicksFresnel(cosThetaI, etaI, etaT);
-            if (sample.x() < fre) {
+            if (sample.x() < fresnelTerm) {
                 bRec.wo = Vector3f { -bRec.wi.x(), -bRec.wi.y(), bRec.wi.z() };
             } else {
                 float cosThetaT = std::sqrt(1. - sin2ThetaT);
