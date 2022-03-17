@@ -28,8 +28,9 @@ public:
             BSDFQueryRecord bsdfQueryRecord { wiLocal };
             Color3f result { 0., 0., 0. };
             if (its.mesh->isEmitter()) {
-                result = its.mesh->getEmitter()->getRadiance();
-            } else if (bsdf->isDiffuse()) {
+                result += its.mesh->getEmitter()->getRadiance();
+            } 
+            if (bsdf->isDiffuse()) {
                 float emitterPdf;
                 auto mesh = scene->sampleEmitter(sampler, emitterPdf);
                 if (mesh != nullptr) {
@@ -48,7 +49,7 @@ public:
                     Intersection shadowRayIts;
                     scene->shadowrayIntersect(secondaryRay, shadowRayIts);
                     if (shadowRayIts.t * shadowRayIts.t >= distanceSquared - Epsilon) {
-                        result = bsdfValue * mesh->getEmitter()->sample(-outDir, lightSamplePosNormal, distanceSquared) * fmaxf(0.0, shadingPointNormal.dot(outDir)) / (pdf * emitterPdf);
+                        result += bsdfValue * mesh->getEmitter()->sample(-outDir, lightSamplePosNormal, distanceSquared) * fmaxf(0.0, shadingPointNormal.dot(outDir)) / (pdf * emitterPdf);
                     }
                 }
             } else {
@@ -56,7 +57,7 @@ public:
                 if (sampler->next1D() < russianRouletteProbability) {
                     bsdf->sample(bsdfQueryRecord, sampler->next2D());
                     Vector3f woWorld = its.shFrame.toWorld(bsdfQueryRecord.wo);
-                    result = Li(scene, sampler, Ray3f { shadingPoint, woWorld }) / russianRouletteProbability;
+                    result += Li(scene, sampler, Ray3f { shadingPoint, woWorld }) / russianRouletteProbability;
                 }
             }
             return result;
