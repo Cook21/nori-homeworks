@@ -29,28 +29,15 @@ public:
             Color3f result { 0., 0., 0. };
             if (its.mesh->isEmitter()) {
                 result += its.mesh->getEmitter()->getRadiance();
-            } 
+            }
             if (bsdf->isDiffuse()) {
-                float emitterPdf;
-                auto mesh = scene->sampleEmitter(sampler, emitterPdf);
-                if (mesh != nullptr) {
-                    Point3f lightSamplePos;
-                    Vector3f lightSamplePosNormal;
-                    float pdf;
-                    mesh->sample(sampler, lightSamplePos, lightSamplePosNormal, pdf);
-                    Vector3f outDir = lightSamplePos - shadingPoint;
-                    float distanceSquared = outDir.dot(outDir);
-                    //算完距离之后单位化
-                    outDir.normalize();
+                Vector3f outDir;
+                Color3f lightSampleResult = scene->sampleEmitter(sampler, shadingPoint, outDir);
+                if (lightSampleResult.x()!=0.||lightSampleResult.y()!=0.||lightSampleResult.z()!=0.) {
                     bsdfQueryRecord.wo = its.shFrame.toLocal(outDir);
                     bsdfQueryRecord.measure = ESolidAngle;
                     Color3f bsdfValue = bsdf->eval(bsdfQueryRecord);
-                    auto secondaryRay = Ray3f(shadingPoint, outDir);
-                    Intersection shadowRayIts;
-                    scene->shadowrayIntersect(secondaryRay, shadowRayIts);
-                    if (shadowRayIts.t * shadowRayIts.t >= distanceSquared - Epsilon) {
-                        result += bsdfValue * mesh->getEmitter()->sample(-outDir, lightSamplePosNormal, distanceSquared) * fmaxf(0.0, shadingPointNormal.dot(outDir)) / (pdf * emitterPdf);
-                    }
+                    result += bsdfValue * lightSampleResult * fmaxf(0.0, shadingPointNormal.dot(outDir));
                 }
             } else {
                 const float russianRouletteProbability = 0.95;
@@ -64,7 +51,8 @@ public:
         }
     }
     /// Return a human-readable description for debugging purposes
-    std::string toString() const
+    std::string
+    toString() const
     {
         return "WhittedIntegrator[]";
     }

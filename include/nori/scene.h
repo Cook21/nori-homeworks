@@ -18,7 +18,10 @@
 
 #pragma once
 
+#include "nori/color.h"
+#include "nori/common.h"
 #include <nori/accel.h>
+#include <nori/emitter.h>
 #include <nori/sampler.h>
 
 NORI_NAMESPACE_BEGIN
@@ -93,7 +96,7 @@ public:
      *
      * \return \c true if an intersection was found
      */
-    bool shadowrayIntersect(const Ray3f& ray,Intersection& its) const
+    bool shadowrayIntersect(const Ray3f& ray, Intersection& its) const
     {
         return m_accel->rayIntersect(ray, its, true);
     }
@@ -118,13 +121,30 @@ public:
     /// Return a string summary of the scene (for debugging purposes)
     std::string toString() const;
 
-    Mesh* sampleEmitter(Sampler* sampler, float& pdfOut) const
+    Color3f sampleEmitter(Sampler* sampler, const Point3f& shadingPoint, Vector3f& outDir) const
     {
         if (emitterSurfaceAreaDPDF.size() > 0) {
-            auto id = emitterSurfaceAreaDPDF.sample(sampler->next1D(), pdfOut);
-            return m_meshes[emitterIdx[id]];
+            float sampleFacePdf;
+            auto id = emitterSurfaceAreaDPDF.sample(sampler->next1D(), sampleFacePdf);
+            Mesh* mesh = m_meshes[emitterIdx[id]];
+            Point3f lightSamplePos;
+            Vector3f lightSamplePosNormal;
+            float SamplePosPdf;
+            mesh->sample(sampler, lightSamplePos, lightSamplePosNormal, SamplePosPdf);
+            outDir = lightSamplePos - shadingPoint;
+            float distanceSquared = outDir.dot(outDir);
+            //算完距离之后单位化
+            outDir.normalize();
+            auto secondaryRay = Ray3f(shadingPoint, outDir);
+            Intersection shadowRayIts;
+            this->shadowrayIntersect(secondaryRay, shadowRayIts);
+            if (shadowRayIts.t * shadowRayIts.t >= distanceSquared - Epsilon) {
+                return mesh->getEmitter()->sample(-outDir, lightSamplePosNormal, distanceSquared) / (SamplePosPdf * sampleFacePdf);
+            } else {
+                return Color3f(0.0f);
+            }
         } else {
-            return nullptr;
+            return Color3f(0.f);
         }
     }
 
