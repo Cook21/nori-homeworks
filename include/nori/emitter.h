@@ -18,16 +18,27 @@
 
 #pragma once
 
+#include "nori/common.h"
 #include <nori/object.h>
 
 NORI_NAMESPACE_BEGIN
-
+struct EmitterQueryRecord {
+    EMeasure targetMeasure;
+    Vector3f wiLocal;
+    float distanceSquared;
+    EmitterQueryRecord(EMeasure targetMeasure_ = EUnknownMeasure, const Vector3f& wiLocal_ = Vector3f { NAN }, float distanceSquared_ = 0.f)
+        : targetMeasure(targetMeasure_)
+        , wiLocal(wiLocal_)
+        , distanceSquared(distanceSquared_)
+    {
+    }
+};
 /**
  * \brief Superclass of all emitters
  */
 class Emitter : public NoriObject {
 public:
-    virtual Color3f sample(Vector3f wiWorld, Vector3f normalWorld, float distanceSquared) const = 0;
+    virtual float pdf(const EmitterQueryRecord& eRec, const float pdfIn) const = 0;
     virtual Color3f getRadiance() const = 0;
     /**
      * \brief Return the type of object (i.e. Mesh/Emitter/etc.) 

@@ -18,8 +18,12 @@
 
 #pragma once
 
+#include "nori/bsdf.h"
 #include "nori/color.h"
 #include "nori/common.h"
+#include "nori/frame.h"
+#include "nori/mesh.h"
+#include <cstddef>
 #include <nori/accel.h>
 #include <nori/emitter.h>
 #include <nori/sampler.h>
@@ -121,33 +125,43 @@ public:
     /// Return a string summary of the scene (for debugging purposes)
     std::string toString() const;
 
-    Color3f sampleEmitter(Sampler* sampler, const Point3f& shadingPoint, Vector3f& outDir) const
+    Color3f sampleEmitter(Sampler* sampler, const BSDF* bsdf, BSDFQueryRecord& bRec, const Intersection& its, EmitterQueryRecord& eRec, float& pdfOut) const
     {
-        if (emitterSurfaceAreaDPDF.size() > 0) {
-            float sampleFacePdf;
-            auto id = emitterSurfaceAreaDPDF.sample(sampler->next1D(), sampleFacePdf);
-            Mesh* mesh = m_meshes[emitterIdx[id]];
+        Color3f result { .0f };
+        if (emitterDPDF.size() > 0) {
+            float emitterIdPdf;
+            size_t emitterId = emitterDPDF.sample(sampler->next1D(), emitterIdPdf);
+            Mesh* mesh = m_meshes[emitterMeshId[emitterId]];
             Point3f lightSamplePos;
-            Vector3f lightSamplePosNormal;
             float SamplePosPdf;
-            mesh->sample(sampler, lightSamplePos, lightSamplePosNormal, SamplePosPdf);
-            outDir = lightSamplePos - shadingPoint;
-            float distanceSquared = outDir.dot(outDir);
+            //生成法线
+            Vector3f normalWorld;
+            mesh->sample(sampler, lightSamplePos, normalWorld, SamplePosPdf);
+            Vector3f outDir = lightSamplePos - its.p;
+            eRec.distanceSquared = outDir.squaredNorm();
             //算完距离之后单位化
             outDir.normalize();
-            auto secondaryRay = Ray3f(shadingPoint, outDir);
+            nori::Frame frame { normalWorld };
+            eRec.wiLocal = frame.toLocal(-outDir);
+            auto shadowRay = Ray3f(its.p, outDir);
             Intersection shadowRayIts;
-            this->shadowrayIntersect(secondaryRay, shadowRayIts);
-            if (shadowRayIts.t * shadowRayIts.t >= distanceSquared - Epsilon) {
-                return mesh->getEmitter()->sample(-outDir, lightSamplePosNormal, distanceSquared) / (SamplePosPdf * sampleFacePdf);
-            } else {
-                return Color3f(0.0f);
+            this->shadowrayIntersect(shadowRay, shadowRayIts);
+            if (shadowRayIts.t * shadowRayIts.t >= eRec.distanceSquared - Epsilon) {
+                bRec.wo = its.shFrame.toLocal(outDir);
+                bRec.measure = ESolidAngle;
+                Color3f bsdfValue = bsdf->eval(bRec);
+                pdfOut = mesh->getEmitter()->pdf(eRec, emitterIdPdf * SamplePosPdf);
+                result += bsdfValue * mesh->getEmitter()->getRadiance() * fmaxf(0.0, Frame::cosTheta(bRec.wo)) / pdfOut;
+            }else{
+                pdfOut = NAN; //shadowRay被遮挡
             }
-        } else {
-            return Color3f(0.f);
         }
+        return result;
     }
-
+    float getEmitterPdf(EmitterQueryRecord eRec, const Mesh* const emitterMesh) const
+    {
+        return emitterMesh->getEmitter()->pdf(eRec, emitterDPDF[0] / emitterMesh->getSurfaceArea());
+    }
     EClassType getClassType() const { return EScene; }
 
 private:
@@ -156,8 +170,8 @@ private:
     Sampler* m_sampler = nullptr;
     Camera* m_camera = nullptr;
     Accel* m_accel = nullptr;
-    DiscretePDF emitterSurfaceAreaDPDF;
-    std::vector<uint32_t> emitterIdx {};
+    DiscretePDF emitterDPDF;
+    std::vector<uint32_t> emitterMeshId {};
 };
 
 NORI_NAMESPACE_END

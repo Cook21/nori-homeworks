@@ -53,11 +53,11 @@ void Scene::activate()
     }
     for(size_t i=0;i < m_meshes.size();i++){
         if(m_meshes[i]->isEmitter()){
-            emitterSurfaceAreaDPDF.append(m_meshes[i]->getSurfaceArea());
-            emitterIdx.push_back(i);
+            emitterDPDF.append(1.);
+            emitterMeshId.push_back(i);
         }
     }
-    emitterSurfaceAreaDPDF.normalize();
+    emitterDPDF.normalize();
 
     cout << endl;
     cout << "Configuration: " << toString() << endl;

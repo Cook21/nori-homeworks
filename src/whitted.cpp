@@ -21,8 +21,7 @@ public:
         if (!scene->rayIntersect(ray, its)) {
             return Color3f(0.0);
         } else {
-            Point3f shadingPoint = its.p;
-            Normal3f shadingPointNormal = its.shFrame.n;
+            Point3f& shadingPoint = its.p;
             const BSDF* bsdf = its.mesh->getBSDF();
             Vector3f wiLocal = its.shFrame.toLocal(-ray.d);
             BSDFQueryRecord bsdfQueryRecord { wiLocal };
@@ -31,14 +30,9 @@ public:
                 result += its.mesh->getEmitter()->getRadiance();
             }
             if (bsdf->isDiffuse()) {
-                Vector3f outDir;
-                Color3f lightSampleResult = scene->sampleEmitter(sampler, shadingPoint, outDir);
-                if (lightSampleResult.x()!=0.||lightSampleResult.y()!=0.||lightSampleResult.z()!=0.) {
-                    bsdfQueryRecord.wo = its.shFrame.toLocal(outDir);
-                    bsdfQueryRecord.measure = ESolidAngle;
-                    Color3f bsdfValue = bsdf->eval(bsdfQueryRecord);
-                    result += bsdfValue * lightSampleResult * fmaxf(0.0, shadingPointNormal.dot(outDir));
-                }
+                EmitterQueryRecord eRec = EmitterQueryRecord(ESolidAngle);
+                float pdf;
+                result += scene->sampleEmitter(sampler, bsdf, bsdfQueryRecord, its, eRec, pdf);
             } else {
                 const float russianRouletteProbability = 0.95;
                 if (sampler->next1D() < russianRouletteProbability) {

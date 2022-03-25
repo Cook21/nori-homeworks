@@ -1,6 +1,6 @@
 #include "nori/color.h"
-#include "nori/emitter.h"
 #include "nori/common.h"
+#include "nori/emitter.h"
 #include "nori/frame.h"
 #include "nori/mesh.h"
 #include "nori/vector.h"
@@ -8,16 +8,24 @@
 NORI_NAMESPACE_BEGIN
 class AreaLight : public Emitter {
     Color3f radiance;
+
 public:
     AreaLight(const PropertyList& props)
     {
         radiance = props.getColor("radiance");
     }
-    Color3f sample(Vector3f wiWorld, Vector3f normalWorld, float distanceSquared) const override {
-        Color3f result = radiance * std::max(wiWorld.dot(normalWorld),0.0f) / distanceSquared;
-        return result;
+    float pdf(const EmitterQueryRecord& eRec, const float pdfIn) const override{
+        if(eRec.targetMeasure == EDiscrete){
+            return pdfIn;
+        }else if(eRec.targetMeasure == ESolidAngle){
+            float areaToSolidAngleFactor = std::max(Frame::cosTheta(eRec.wiLocal), 0.0f) / eRec.distanceSquared;
+            return pdfIn / areaToSolidAngleFactor;
+        }else{
+            return NAN;
+        }
     }
-    Color3f getRadiance() const override {
+    Color3f getRadiance() const override
+    {
         return radiance;
     }
     /// Return a human-readable description for debugging purposes

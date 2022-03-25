@@ -107,8 +107,9 @@ public:
             Point2f sample {_sample.x()/m_ks,_sample.y()}; //sample reuse
             Vector3f normal = Warp::squareToBeckmann(sample,m_alpha);
             bRec.wo = 2.f * normal.dot(bRec.wi) * normal - bRec.wi;
-            if((normal - (bRec.wo+bRec.wi).normalized()).norm() > 0.5f)
-                cout <<"wi:"<< bRec.wi << "normal:"<< normal << "wo" << bRec.wo<< endl;
+            //检查数值稳定性
+            // if((normal - (bRec.wo+bRec.wi).normalized()).norm() > 0.5f)
+            //     cout <<"wi:"<< bRec.wi << "normal:"<< normal << "wo" << bRec.wo<< endl;
         }else{ //Diffuse case
             Point2f sample {(_sample.x()-m_ks)/(1.f-m_ks),_sample.y()}; //sample reuse
             bRec.wo = Warp::squareToCosineHemisphere(sample);
